@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "MekVault Alpha",
+    "slug": "mekvault-alpha",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#090d16"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.redpanda1ui.mekvaultalpha"
+    },
+    "android": {
+      "package": "com.redpanda1ui.mekvaultalpha"
+    }
+  }
+}
