@@ -1,6 +1,6 @@
 {
   "name": "mekvault-alpha",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "workspaces": [
     "mobile",
@@ -9,7 +9,8 @@
   "scripts": {
     "mobile": "npm run start --workspace mobile",
     "server": "npm run dev --workspace server",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm test --workspaces"
   },
   "engines": {
     "node": ">=20"
