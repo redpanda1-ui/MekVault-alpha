@@ -26,7 +26,7 @@ The mobile app has five bottom sections:
 
 - **Home** — local vault and deck summary.
 - **Decks** — deck creation and plain-text imports such as `1 Sol Ring`.
-- **Build** — Commander selection, quantity editing, search, and deterministic validation.
+- **Build** — Commander selection, quantity editing, search, deterministic validation, and a constraint-driven AI deck builder.
 - **AI Coach** — deck selection, custom coaching constraints, and structured recommendations.
 - **Collection** — live Scryfall search with card images, metadata, and available USD prices.
 
@@ -41,7 +41,7 @@ Legality checks run locally and never rely on AI. The validator uses Scryfall me
 - Every card's color identity against the commander's color identity.
 - Commander-format legality for the commander and deck cards.
 
-AI recommendations remain advisory. The server checks every AI-generated card name against Scryfall and sets `needsReview` plus per-card `validated` flags when a name cannot be verified.
+AI recommendations remain advisory. The server validates generated builds as exactly one eligible commander plus 99 cards, then checks quantities, singleton rules, color identity, Commander legality, and Scryfall card data. It sets `needsReview` whenever any deterministic check fails. Coach additions receive the same identity and legality checks, while suggested cuts that do not exist in the submitted deck are removed and flagged.
 
 ## Prerequisites
 
@@ -97,7 +97,7 @@ Accepts `{ instructions, deck }`. The server sends deck details to OpenAI and re
 
 ### `POST /api/build`
 
-Accepts `commander`, `strategy`, optional `budget`, optional `desiredPower` and/or `bracket`, `mustKeep`, `avoid`, and optional collection card information. Generated commander and card names are verified with Scryfall before the response is returned.
+Accepts `commander`, `strategy`, optional `budget`, optional `desiredPower` and/or `bracket`, `mustKeep`, `avoid`, and optional collection card information. It returns one commander and a card array whose quantities must total 99. Generated results are checked against Scryfall and fully validated for Commander before the response is returned.
 
 ### `GET /health`
 
@@ -107,6 +107,7 @@ Returns API status and version without invoking OpenAI.
 
 ```bash
 npm run typecheck
+npm test
 ```
 
 ## Security and data boundaries

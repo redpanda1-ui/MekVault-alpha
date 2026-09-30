@@ -24,7 +24,7 @@ export const buildJsonSchema = {
   type: 'object', additionalProperties: false,
   properties: {
     summary: { type: 'string' }, commander: { type: 'string' },
-    cards: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { name: { type: 'string' }, quantity: { type: 'number' }, role: { type: 'string' } }, required: ['name', 'quantity', 'role'] } },
+    cards: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { name: { type: 'string' }, quantity: { type: 'integer', minimum: 1 }, role: { type: 'string' } }, required: ['name', 'quantity', 'role'] } },
     warnings: { type: 'array', items: { type: 'string' } },
   }, required: ['summary', 'commander', 'cards', 'warnings'],
  } as const;

@@ -29,3 +29,17 @@ export interface CoachRecommendation {
   warnings: string[];
   needsReview: boolean;
 }
+
+export interface AiBuildResult {
+  summary: string;
+  commander: { name: string; validated: boolean };
+  cards: Array<{ name: string; quantity: number; role: string; validated: boolean }>;
+  warnings: string[];
+  needsReview: boolean;
+  validation: {
+    isValid: boolean;
+    totalCards: number;
+    deckCardCount: number;
+    issues: Array<{ cardName?: string; code: string; message: string }>;
+  };
+}

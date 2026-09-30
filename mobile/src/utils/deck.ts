@@ -9,6 +9,7 @@ export const canBeCommander = (card: ScryfallCard) =>
 export function validateCommanderDeck(deck: Deck): DeckValidation {
   const issues: DeckValidation['issues'] = []; const totalCards = deckTotal(deck);
   if (!deck.commander) issues.push({ severity: 'error', message: 'Choose a commander.' });
+  if (deck.commander && !canBeCommander(deck.commander)) issues.push({ severity: 'error', cardName: deck.commander.name, message: `${deck.commander.name} is not eligible to be a commander.` });
   if (totalCards !== 100) issues.push({ severity: 'error', message: `Commander decks require exactly 100 cards; this deck has ${totalCards}.` });
   const allowedColors = new Set(deck.commander?.colorIdentity ?? []);
   const allEntries: DeckCardEntry[] = [...deck.cards, ...(deck.commander ? [{ card: deck.commander, quantity: 1 }] : [])];
@@ -43,4 +44,12 @@ export function upsertCard(entries: DeckCardEntry[], card: ScryfallCard, change 
   const existing = entries.find((entry) => entry.card.id === card.id);
   if (!existing && change > 0) return [...entries, { card, quantity: change }];
   return entries.map((entry) => entry.card.id === card.id ? { ...entry, quantity: entry.quantity + change } : entry).filter((entry) => entry.quantity > 0);
+}
+
+export function replaceCommander(deck: Deck, commander: ScryfallCard): Deck {
+  let cards = deck.cards.filter((entry) => entry.card.id !== commander.id);
+  if (deck.commander && deck.commander.id !== commander.id) {
+    cards = upsertCard(cards, deck.commander, 1);
+  }
+  return { ...deck, commander, cards };
 }
