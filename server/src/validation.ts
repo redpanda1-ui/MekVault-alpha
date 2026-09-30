@@ -7,6 +7,11 @@ export interface BuildDraft {
   cards: Array<{ name: string; quantity: number; role: string }>;
   warnings: string[];
 }
+export interface BuildConstraints {
+  commander: string;
+  mustKeep: string[];
+  avoid: string[];
+}
 export interface CoachDraft {
   summary: string;
   strengths: string[];
@@ -22,7 +27,7 @@ export interface SubmittedDeck {
 }
 export interface ValidationIssue {
   cardName?: string;
-  code: 'card_not_found' | 'invalid_commander' | 'illegal' | 'color_identity' | 'singleton' | 'quantity' | 'card_count' | 'hallucinated_cut';
+  code: 'card_not_found' | 'invalid_commander' | 'illegal' | 'color_identity' | 'singleton' | 'quantity' | 'card_count' | 'hallucinated_cut' | 'commander_mismatch' | 'missing_must_keep' | 'avoided_card';
   message: string;
 }
 
@@ -33,7 +38,7 @@ export const canBeCommander = (card: ScryfallCardData) =>
 const permitsMultiples = (card: ScryfallCardData) =>
   card.typeLine.includes('Basic Land') || MULTIPLE_COPY_TEXT.test(card.oracleText);
 
-export async function validateGeneratedBuild(draft: BuildDraft, lookup: CardLookup) {
+export async function validateGeneratedBuild(draft: BuildDraft, constraints: BuildConstraints, lookup: CardLookup) {
   const issues: ValidationIssue[] = [];
   const cache = new Map<string, ScryfallCardData | undefined>();
   const find = async (name: string) => {
@@ -43,11 +48,21 @@ export async function validateGeneratedBuild(draft: BuildDraft, lookup: CardLook
   };
 
   const commander = await find(draft.commander);
+  const requestedCommander = await find(constraints.commander);
   if (!commander) {
     issues.push({ cardName: draft.commander, code: 'card_not_found', message: `Commander "${draft.commander}" was not found on Scryfall.` });
   } else {
     if (!canBeCommander(commander)) issues.push({ cardName: commander.name, code: 'invalid_commander', message: `${commander.name} is not eligible to be a commander.` });
     if (commander.commanderLegality !== 'legal') issues.push({ cardName: commander.name, code: 'illegal', message: `${commander.name} is ${commander.commanderLegality.replace('_', ' ')} in Commander.` });
+  }
+  const generatedCommanderKey = (commander?.name ?? draft.commander).toLocaleLowerCase();
+  const requestedCommanderKey = (requestedCommander?.name ?? constraints.commander).toLocaleLowerCase();
+  if (generatedCommanderKey !== requestedCommanderKey) {
+    issues.push({
+      cardName: commander?.name ?? draft.commander,
+      code: 'commander_mismatch',
+      message: `Generated commander ${commander?.name ?? draft.commander} does not match requested commander ${requestedCommander?.name ?? constraints.commander}.`,
+    });
   }
 
   const totalCards = draft.cards.reduce((total, entry) =>
@@ -59,6 +74,7 @@ export async function validateGeneratedBuild(draft: BuildDraft, lookup: CardLook
 
   const canonicalQuantities = new Map<string, number>();
   const canonicalCards = new Map<string, ScryfallCardData>();
+  const generatedNames = new Set<string>([generatedCommanderKey]);
   if (commander) {
     canonicalQuantities.set(commander.name.toLocaleLowerCase(), 1);
     canonicalCards.set(commander.name.toLocaleLowerCase(), commander);
@@ -72,6 +88,7 @@ export async function validateGeneratedBuild(draft: BuildDraft, lookup: CardLook
       continue;
     }
     const key = card.name.toLocaleLowerCase();
+    generatedNames.add(key);
     canonicalQuantities.set(key, (canonicalQuantities.get(key) ?? 0) + entry.quantity);
     canonicalCards.set(key, card);
     if (card.commanderLegality !== 'legal') issues.push({ cardName: card.name, code: 'illegal', message: `${card.name} is ${card.commanderLegality.replace('_', ' ')} in Commander.` });
@@ -81,9 +98,27 @@ export async function validateGeneratedBuild(draft: BuildDraft, lookup: CardLook
       if (outside.length) issues.push({ cardName: card.name, code: 'color_identity', message: `${card.name} is outside ${commander.name}'s color identity.` });
     }
   }
+  for (const entry of draft.cards.filter((item) => !canonicalCards.has(item.name.toLocaleLowerCase()))) {
+    generatedNames.add(entry.name.toLocaleLowerCase());
+  }
   for (const [name, quantity] of canonicalQuantities) {
     const card = canonicalCards.get(name);
     if (card && quantity > 1 && !permitsMultiples(card)) issues.push({ cardName: card.name, code: 'singleton', message: `${card.name} violates the Commander singleton rule.` });
+  }
+
+  for (const requiredName of constraints.mustKeep) {
+    const required = await find(requiredName);
+    const key = (required?.name ?? requiredName).toLocaleLowerCase();
+    if (!generatedNames.has(key)) {
+      issues.push({ cardName: required?.name ?? requiredName, code: 'missing_must_keep', message: `Required card ${required?.name ?? requiredName} is missing from the generated build.` });
+    }
+  }
+  for (const avoidedName of constraints.avoid) {
+    const avoided = await find(avoidedName);
+    const key = (avoided?.name ?? avoidedName).toLocaleLowerCase();
+    if (generatedNames.has(key)) {
+      issues.push({ cardName: avoided?.name ?? avoidedName, code: 'avoided_card', message: `Avoided card ${avoided?.name ?? avoidedName} appears in the generated build.` });
+    }
   }
 
   const invalidNames = new Set(issues.flatMap((issue) => issue.cardName ? [issue.cardName.toLocaleLowerCase()] : []));

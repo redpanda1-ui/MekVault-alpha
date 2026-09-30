@@ -97,7 +97,7 @@ Accepts `{ instructions, deck }`. The server sends deck details to OpenAI and re
 
 ### `POST /api/build`
 
-Accepts `commander`, `strategy`, optional `budget`, optional `desiredPower` and/or `bracket`, `mustKeep`, `avoid`, and optional collection card information. It returns one commander and a card array whose quantities must total 99. Generated results are checked against Scryfall and fully validated for Commander before the response is returned.
+Accepts `commander`, `strategy`, optional `budget`, optional `desiredPower` and/or `bracket`, `mustKeep`, `avoid`, and optional collection card information. It returns one commander and a card array whose quantities must total 99. Generated results are checked against Scryfall and fully validated for Commander before the response is returned. Canonical card names are used to verify that the requested commander is preserved, every must-keep card is present, and no avoided card appears; any violation marks the build as needing review.
 
 ### `GET /health`
 
