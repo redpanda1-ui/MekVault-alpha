@@ -13,7 +13,7 @@ import {
 
 const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
-async function structured<T>(name: string, schema: object, prompt: string): Promise<T> {
+async function structured<T>(name: string, schema: Record<string, unknown>, prompt: string): Promise<T> {
   const response = await openai.responses.create({
     model: config.OPENAI_MODEL,
     input: prompt,
