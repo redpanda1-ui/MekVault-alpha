@@ -14,6 +14,12 @@
     },
     "android": {
       "package": "com.redpanda1ui.mekvaultalpha"
+    },
+    "owner": "mekredpanda_labs",
+    "extra": {
+      "eas": {
+        "projectId": "2671939c-a388-4740-aea9-2cb2f645f953"
+      }
     }
   }
 }
