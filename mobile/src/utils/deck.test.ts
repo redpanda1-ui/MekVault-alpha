@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Deck, ScryfallCard } from '../types/mtg';
-import { replaceCommander, validateCommanderDeck } from './deck';
+import { parseDecklist, replaceCommander, validateCommanderDeck } from './deck';
 
 const card = (name: string, overrides: Partial<ScryfallCard> = {}): ScryfallCard => ({
   id: name, name, typeLine: 'Artifact', set: 'TST', setName: 'Test', collectorNumber: '1',
@@ -34,4 +34,25 @@ test('returns the previous commander to the deck when changing commanders', () =
   assert.equal(changed.commander?.name, 'Next Leader');
   assert.equal(changed.cards.find((entry) => entry.card.name === leader.name)?.quantity, 1);
   assert.equal(changed.cards.some((entry) => entry.card.name === next.name), false);
+});
+
+
+test('parses sectioned Commander lists and ignores section headers', () => {
+  const parsed = parseDecklist(`[COMMANDER]
+1 The Mycotyrant
+
+[CREATURES]
+1 Birds of Paradise
+1 Eternal Witness
+
+[LANDS]
+10 Forest
+`);
+  assert.equal(parsed.commanderName, 'The Mycotyrant');
+  assert.deepEqual(parsed.cards, [
+    { name: 'Birds of Paradise', quantity: 1 },
+    { name: 'Eternal Witness', quantity: 1 },
+    { name: 'Forest', quantity: 10 },
+  ]);
+  assert.deepEqual(parsed.errors, []);
 });
