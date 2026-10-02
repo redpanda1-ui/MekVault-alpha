@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { VaultProvider } from './src/context/VaultContext';
 import { AiCoachScreen } from './src/screens/AiCoachScreen';
@@ -26,12 +27,13 @@ export default function App() {
   const Screen = screens[tab];
 
   return (
-    <VaultProvider>
-      <SafeAreaView style={styles.screen}>
+    <SafeAreaProvider>
+      <VaultProvider>
+        <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.screen}>
         <StatusBar style="light" />
         <View style={styles.header}>
           <Text style={styles.brand}>MEKVAULT</Text>
-          <Text style={styles.alpha}>ALPHA · v0.2</Text>
+          <Text style={styles.alpha}>ALPHA · v0.3</Text>
         </View>
         <View style={styles.content}><Screen /></View>
         <View style={styles.nav}>
@@ -42,8 +44,9 @@ export default function App() {
             </Pressable>
           ))}
         </View>
-      </SafeAreaView>
-    </VaultProvider>
+        </SafeAreaView>
+      </VaultProvider>
+    </SafeAreaProvider>
   );
 }
 
