@@ -1,4 +1,4 @@
-import { findCardByName } from '../services/scryfall';
+import { resolveCardsByName } from '../services/scryfall';
 import type { Deck, DeckCardEntry, DeckValidation, ScryfallCard } from '../types/mtg';
 
 const MULTIPLE_COPY_TEXT = /a deck can have (?:any number|up to [a-z0-9]+) of cards named/i;
@@ -25,20 +25,61 @@ export function validateCommanderDeck(deck: Deck): DeckValidation {
   }
   return { totalCards, isComplete: totalCards === 100 && Boolean(deck.commander), isValid: issues.every((issue) => issue.severity !== 'error'), issues };
 }
-export interface ImportResult { entries: DeckCardEntry[]; errors: string[]; }
-export async function importDecklist(text: string): Promise<ImportResult> {
-  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean); const parsed = new Map<string, number>(); const errors: string[] = [];
+export interface ParsedDecklist {
+  cards: Array<{ name: string; quantity: number }>;
+  commanderName?: string;
+  errors: string[];
+}
+export function parseDecklist(text: string): ParsedDecklist {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const parsed = new Map<string, number>();
+  const errors: string[] = [];
+  let section = '';
+  let commanderName: string | undefined;
+
   for (const line of lines) {
-    const match = line.match(/^(\d+)\s+(?:x\s+)?(.+?)(?:\s+\([A-Z0-9]+\)\s+\d+)?$/i);
-    if (!match) { errors.push(`Could not parse: ${line}`); continue; }
-    const name = match[2].trim(); parsed.set(name, (parsed.get(name) ?? 0) + Number(match[1]));
+    const sectionMatch = line.match(/^\[([^\]]+)\]$/);
+    if (sectionMatch) {
+      section = sectionMatch[1].trim().toUpperCase();
+      continue;
+    }
+    const match = line.match(/^(\d+)\s+(?:x\s+)?(.+?)(?:\s+\([A-Z0-9]+\)\s+[A-Z0-9-]+)?(?:\s+\*[^*]+\*)?$/i);
+    if (!match) {
+      errors.push(`Could not parse: ${line}`);
+      continue;
+    }
+    const quantity = Number(match[1]);
+    const name = match[2].trim();
+    if (section === 'COMMANDER' && !commanderName) {
+      commanderName = name;
+      continue;
+    }
+    parsed.set(name, (parsed.get(name) ?? 0) + quantity);
   }
+
+  return { cards: [...parsed].map(([name, quantity]) => ({ name, quantity })), commanderName, errors };
+}
+export interface ImportResult { entries: DeckCardEntry[]; commander?: ScryfallCard; errors: string[]; }
+export async function importDecklist(text: string): Promise<ImportResult> {
+  const parsed = parseDecklist(text);
+  const names = [...parsed.cards.map((entry) => entry.name), ...(parsed.commanderName ? [parsed.commanderName] : [])];
+  if (!names.length) return { entries: [], errors: parsed.errors.length ? parsed.errors : ['No cards found in decklist.'] };
+
+  const resolved = await resolveCardsByName(names);
+  const byName = new Map(resolved.cards.map((card) => [card.name.toLocaleLowerCase(), card]));
   const entries: DeckCardEntry[] = [];
-  for (const [name, quantity] of parsed) {
-    try { entries.push({ card: await findCardByName(name), quantity }); }
-    catch { errors.push(`Card not found: ${name}`); }
+  const errors = [...parsed.errors];
+
+  for (const entry of parsed.cards) {
+    const card = byName.get(entry.name.toLocaleLowerCase());
+    if (card) entries.push({ card, quantity: entry.quantity });
+    else errors.push(`Card not found: ${entry.name}`);
   }
-  return { entries, errors };
+
+  const commander = parsed.commanderName ? byName.get(parsed.commanderName.toLocaleLowerCase()) : undefined;
+  if (parsed.commanderName && !commander) errors.push(`Commander not found: ${parsed.commanderName}`);
+
+  return { entries, commander, errors };
 }
 export function upsertCard(entries: DeckCardEntry[], card: ScryfallCard, change = 1) {
   const existing = entries.find((entry) => entry.card.id === card.id);
