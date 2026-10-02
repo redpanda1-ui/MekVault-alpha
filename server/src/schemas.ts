@@ -5,6 +5,8 @@ export const coachRequestSchema = z.object({
   instructions: z.string().trim().min(1).max(2_000),
   deck: z.object({ name: z.string().min(1), commander: z.object({ name: z.string(), colorIdentity: z.array(z.string()), typeLine: z.string() }).optional(), cards: z.array(z.object({ card: cardSchema, quantity: z.number().int().positive() })).max(500), validation: z.unknown().optional() }),
 });
+export const resolveCardsRequestSchema = z.object({ names: z.array(z.string().trim().min(1)).min(1).max(500) });
+
 export const buildRequestSchema = z.object({
   commander: z.string().trim().min(1), strategy: z.string().trim().min(1), budget: z.number().nonnegative().optional(),
   desiredPower: z.string().trim().min(1).optional(), bracket: z.number().int().min(1).max(5).optional(),
