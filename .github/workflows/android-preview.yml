@@ -1,0 +1,44 @@
+name: Android Preview APK
+
+on:
+  push:
+    branches: [build/android]
+  workflow_dispatch:
+
+concurrency:
+  group: android-preview
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Verify Android bundle
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_URL: https://mekvault-alpha.onrender.com
+        run: npx expo export --platform android --output-dir /tmp/mekvault-preview
+
+      - name: Build preview APK with EAS
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli@latest build --platform android --profile preview --non-interactive
