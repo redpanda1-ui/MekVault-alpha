@@ -9,13 +9,17 @@ interface ScryfallResponseCard {
   prices: { usd?: string | null }; color_identity: ScryfallCard['colorIdentity'];
   legalities: { commander: ScryfallCard['commanderLegality'] };
 }
-const mapCard = (card: ScryfallResponseCard): ScryfallCard => ({
-  id: card.id, name: card.name, manaCost: card.mana_cost, typeLine: card.type_line, oracleText: card.oracle_text,
-  set: card.set.toUpperCase(), setName: card.set_name, collectorNumber: card.collector_number,
-  imageUrl: card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal,
-  usdPrice: card.prices.usd ?? undefined, colorIdentity: card.color_identity,
-  commanderLegality: card.legalities.commander,
-});
+const mapCard = (card: ScryfallResponseCard): ScryfallCard => {
+  const faceImages = card.card_faces?.map((face) => face.image_uris?.normal).filter((url): url is string => Boolean(url)) ?? [];
+  const imageUrls = card.image_uris?.normal ? [card.image_uris.normal] : faceImages;
+  return {
+    id: card.id, name: card.name, manaCost: card.mana_cost, typeLine: card.type_line, oracleText: card.oracle_text,
+    set: card.set.toUpperCase(), setName: card.set_name, collectorNumber: card.collector_number,
+    imageUrl: imageUrls[0], imageUrls,
+    usdPrice: card.prices.usd ?? undefined, colorIdentity: card.color_identity,
+    commanderLegality: card.legalities.commander,
+  };
+};
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { headers: { Accept: 'application/json;q=0.9,*/*;q=0.8' } });
   if (!response.ok) throw new Error(response.status === 404 ? 'No matching card found.' : 'Scryfall is unavailable. Try again.');
