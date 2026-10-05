@@ -33,7 +33,7 @@ export default function App() {
         <StatusBar style="light" />
         <View style={styles.header}>
           <Text style={styles.brand}>MEKVAULT</Text>
-          <Text style={styles.alpha}>ALPHA · v0.3</Text>
+          <Text style={styles.alpha}>ALPHA · v0.4</Text>
         </View>
         <View style={styles.content}><Screen /></View>
         <View style={styles.nav}>
