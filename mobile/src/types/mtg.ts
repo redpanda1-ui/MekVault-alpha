@@ -10,6 +10,7 @@ export interface ScryfallCard {
   setName: string;
   collectorNumber: string;
   imageUrl?: string;
+  imageUrls?: string[];
   usdPrice?: string;
   colorIdentity: ColorSymbol[];
   commanderLegality: 'legal' | 'not_legal' | 'restricted' | 'banned';
