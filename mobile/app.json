@@ -2,7 +2,7 @@
   "expo": {
     "name": "MekVault Alpha",
     "slug": "mekvault-alpha",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.redpanda1ui.mekvaultalpha",
-      "versionCode": 2
+      "versionCode": 3
     },
     "owner": "mekredpanda_labs",
     "extra": {
