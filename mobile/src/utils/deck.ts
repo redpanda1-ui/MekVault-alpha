@@ -50,6 +50,10 @@ export function parseDecklist(text: string): ParsedDecklist {
     }
     const quantity = Number(match[1]);
     const name = match[2].trim();
+    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) {
+      errors.push(`Invalid quantity for ${name}: ${match[1]} (must be 1-100)`);
+      continue;
+    }
     if (section === 'COMMANDER' && !commanderName) {
       commanderName = name;
       continue;
