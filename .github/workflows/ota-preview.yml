@@ -1,0 +1,39 @@
+name: Preview OTA Update
+
+on:
+  push:
+    branches: [update/preview]
+  workflow_dispatch:
+
+concurrency:
+  group: preview-ota
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Publish preview OTA update
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_API_URL: https://mekvault-alpha.onrender.com
+        run: npx eas-cli@latest update --channel preview --message "Preview ${GITHUB_SHA}" --non-interactive

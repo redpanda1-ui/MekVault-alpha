@@ -2,9 +2,15 @@
   "expo": {
     "name": "MekVault Alpha",
     "slug": "mekvault-alpha",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2671939c-a388-4740-aea9-2cb2f645f953"
+    },
     "splash": {
       "backgroundColor": "#090d16"
     },
@@ -14,7 +20,7 @@
     },
     "android": {
       "package": "com.redpanda1ui.mekvaultalpha",
-      "versionCode": 3
+      "versionCode": 4
     },
     "owner": "mekredpanda_labs",
     "extra": {
