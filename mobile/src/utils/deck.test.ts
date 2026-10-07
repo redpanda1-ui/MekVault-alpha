@@ -56,3 +56,13 @@ test('parses sectioned Commander lists and ignores section headers', () => {
   ]);
   assert.deepEqual(parsed.errors, []);
 });
+
+
+test('rejects absurd import quantities instead of corrupting deck totals', () => {
+  const parsed = parseDecklist('1 Island\n1 Sol Ring\n100000090 The Mycotyrant');
+  assert.deepEqual(parsed.cards, [
+    { name: 'Island', quantity: 1 },
+    { name: 'Sol Ring', quantity: 1 },
+  ]);
+  assert.match(parsed.errors.join(' '), /Invalid quantity for The Mycotyrant/);
+});
